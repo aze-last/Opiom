@@ -77,7 +77,10 @@ describe("clipper-service & custom LLM integration", () => {
 		expect(useAiProviderStore.getState().baseUrl).toBe(
 			"https://api.deepseek.com/v1",
 		);
-		expect(useAiProviderStore.getState().model).toBe("deepseek-chat");
+		store.setPreset("xkiro");
+		expect(useAiProviderStore.getState().preset).toBe("xkiro");
+		expect(useAiProviderStore.getState().baseUrl).toBe("https://api.xkiro.com/v1");
+		expect(useAiProviderStore.getState().model).toBe("qwen/qwen3.5-flash:free");
 
 		store.setApiKey("test-secret-key-123");
 		expect(useAiProviderStore.getState().apiKey).toBe("test-secret-key-123");

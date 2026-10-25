@@ -13,6 +13,7 @@ import {
 } from "@/stores/ai-provider-store";
 import {
 	testLlmConnection,
+	fetchAvailableModels,
 	type LlmConnectionTestResult,
 } from "@/services/ai/clipper-service";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -54,6 +55,8 @@ export function AiProviderSettings({
 
 	const [showApiKey, setShowApiKey] = useState(false);
 	const [isTesting, setIsTesting] = useState(false);
+	const [isFetchingModels, setIsFetchingModels] = useState(false);
+	const [discoveredModels, setDiscoveredModels] = useState<string[]>([]);
 	const [testResult, setTestResult] = useState<LlmConnectionTestResult | null>(
 		null,
 	);
@@ -61,7 +64,36 @@ export function AiProviderSettings({
 	const handlePresetChange = (newPreset: AiProviderPreset) => {
 		setPreset(newPreset);
 		setTestResult(null);
+		setDiscoveredModels([]);
 		toast.info(`Switched preset to ${PROVIDER_PRESETS[newPreset].name}`);
+	};
+
+	const handleFetchModels = async () => {
+		if (!baseUrl) {
+			toast.error("Please provide a Base URL first");
+			return;
+		}
+
+		setIsFetchingModels(true);
+		const toastId = toast.loading("Discovering models from endpoint...");
+
+		try {
+			const res = await fetchAvailableModels({ baseUrl, apiKey });
+			if (res.success && res.models.length > 0) {
+				setDiscoveredModels(res.models);
+				toast.success(`Found ${res.models.length} available models!`, {
+					id: toastId,
+				});
+			} else {
+				toast.error(res.message || "No models returned by this endpoint", {
+					id: toastId,
+				});
+			}
+		} catch {
+			toast.error("Failed to query models from provider", { id: toastId });
+		} finally {
+			setIsFetchingModels(false);
+		}
 	};
 
 	const handleTestConnection = async () => {
@@ -77,6 +109,10 @@ export function AiProviderSettings({
 			});
 
 			setTestResult(result);
+			if (result.availableModels && result.availableModels.length > 0) {
+				setDiscoveredModels(result.availableModels);
+			}
+
 			if (result.success) {
 				toast.success(result.message, { id: toastId });
 			} else {
@@ -215,13 +251,24 @@ export function AiProviderSettings({
 				</div>
 
 				<div className="space-y-1.5">
-					<span className="text-xs font-medium text-foreground flex items-center gap-1.5">
-						<HugeiconsIcon
-							icon={AiBrain05Icon}
-							className="size-3.5 text-muted-foreground"
-						/>
-						<span>Model Identifier</span>
-					</span>
+					<div className="flex items-center justify-between">
+						<span className="text-xs font-medium text-foreground flex items-center gap-1.5">
+							<HugeiconsIcon
+								icon={AiBrain05Icon}
+								className="size-3.5 text-muted-foreground"
+							/>
+							<span>Model Identifier</span>
+						</span>
+						<button
+							type="button"
+							onClick={handleFetchModels}
+							disabled={isFetchingModels}
+							className="text-[10px] text-primary hover:underline flex items-center gap-1 disabled:opacity-50"
+						>
+							{isFetchingModels ? <Spinner className="size-2.5" /> : null}
+							<span>Auto-fetch models</span>
+						</button>
+					</div>
 					<Input
 						value={model}
 						onChange={(e) => {
@@ -229,9 +276,37 @@ export function AiProviderSettings({
 							setTestResult(null);
 						}}
 						aria-label="Model Identifier"
-						placeholder="gpt-4o, deepseek-chat, llama3.2, etc."
+						placeholder="gpt-4o, qwen/qwen3.5-flash:free, deepseek-chat, etc."
 						className="text-xs font-mono"
 					/>
+					{/* Discovered models quick-select chips */}
+					{discoveredModels.length > 0 && (
+						<div className="space-y-1 pt-1">
+							<span className="text-[10px] font-medium text-muted-foreground block">
+								Available models on this provider ({discoveredModels.length}):
+							</span>
+							<div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-1 bg-muted/20 rounded border border-border/40">
+								{discoveredModels.slice(0, 16).map((m) => (
+									<button
+										key={m}
+										type="button"
+										onClick={() => {
+											setModel(m);
+											setTestResult(null);
+										}}
+										className={cn(
+											"text-[10px] px-2 py-0.5 rounded font-mono transition-colors",
+											model === m
+												? "bg-primary text-primary-foreground font-semibold"
+												: "bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground",
+										)}
+									>
+										{m}
+									</button>
+								))}
+							</div>
+						</div>
+					)}
 				</div>
 
 				{/* Advanced Sliders */}
@@ -276,24 +351,46 @@ export function AiProviderSettings({
 			{testResult && (
 				<div
 					className={cn(
-						"p-3 rounded-lg border flex items-start gap-2.5 text-xs transition-all",
+						"p-3 rounded-lg border flex flex-col gap-2 text-xs transition-all",
 						testResult.success
 							? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
 							: "border-rose-500/40 bg-rose-500/10 text-rose-300",
 					)}
 				>
-					<HugeiconsIcon
-						icon={testResult.success ? CheckmarkCircle02Icon : AlertCircleIcon}
-						className="size-4 shrink-0 mt-0.5"
-					/>
-					<div className="flex-1">
-						<p className="font-medium">
-							{testResult.success ? "Connection Verified" : "Connection Error"}
-						</p>
-						<p className="text-[11px] opacity-90 mt-0.5">
-							{testResult.message}
-						</p>
+					<div className="flex items-start gap-2.5">
+						<HugeiconsIcon
+							icon={testResult.success ? CheckmarkCircle02Icon : AlertCircleIcon}
+							className="size-4 shrink-0 mt-0.5"
+						/>
+						<div className="flex-1">
+							<p className="font-medium">
+								{testResult.success ? "Connection Verified" : "Connection Error"}
+							</p>
+							<p className="text-[11px] opacity-90 mt-0.5">
+								{testResult.message}
+							</p>
+						</div>
 					</div>
+
+					{testResult.suggestedModel && model !== testResult.suggestedModel && (
+						<div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between gap-2">
+							<span className="text-[11px] text-emerald-200">
+								Switch to available model:
+							</span>
+							<Button
+								type="button"
+								size="sm"
+								variant="secondary"
+								className="h-6 text-[10px] px-2.5 font-mono bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-500/30"
+								onClick={() => {
+									setModel(testResult.suggestedModel!);
+									setTestResult(null);
+								}}
+							>
+								Use {testResult.suggestedModel}
+							</Button>
+						</div>
+					)}
 				</div>
 			)}
 

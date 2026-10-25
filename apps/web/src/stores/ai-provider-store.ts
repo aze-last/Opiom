@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 export type AiProviderPreset =
 	| "openai"
+	| "xkiro"
 	| "ollama"
 	| "openrouter"
 	| "deepseek"
@@ -24,6 +25,13 @@ export const PROVIDER_PRESETS: Record<AiProviderPreset, ProviderPresetConfig> =
 			defaultBaseUrl: "https://api.openai.com/v1",
 			defaultModel: "gpt-4o",
 			description: "Standard OpenAI endpoint for GPT-4o, GPT-4o-mini, etc.",
+			requiresKey: true,
+		},
+		xkiro: {
+			name: "xKiro AI",
+			defaultBaseUrl: "https://api.xkiro.com/v1",
+			defaultModel: "qwen/qwen3.5-flash:free",
+			description: "xKiro high-speed AI gateway with free Qwen, Claude, and Gemini models.",
 			requiresKey: true,
 		},
 		ollama: {
