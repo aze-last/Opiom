@@ -10,6 +10,7 @@ import { SoundsView } from "./views/sounds";
 import { StickersView } from "./views/stickers";
 import { TextView } from "./views/text";
 import { EffectsView } from "./views/effects";
+import { AIStudioView } from "./views/ai-studio";
 
 export function AssetsPanel() {
 	const { activeTab } = useAssetsPanelStore();
@@ -18,6 +19,7 @@ export function AssetsPanel() {
 		media: <MediaView />,
 		sounds: <SoundsView />,
 		text: <TextView />,
+		ai: <AIStudioView />,
 		stickers: <StickersView />,
 		effects: <EffectsView />,
 		transitions: (

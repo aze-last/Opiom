@@ -18,10 +18,7 @@ import { Button } from "@/components/ui/button";
 import { uppercase } from "@/utils/string";
 import { clamp, formatNumberForDisplay } from "@/utils/math";
 import { useEditor } from "@/hooks/use-editor";
-import {
-	CORNER_RADIUS_MAX,
-	CORNER_RADIUS_MIN,
-} from "@/lib/text/background";
+import { CORNER_RADIUS_MAX, CORNER_RADIUS_MIN } from "@/lib/text/background";
 import {
 	DEFAULT_TEXT_COLOR,
 	MAX_FONT_SIZE,
@@ -35,10 +32,19 @@ import { KeyframeToggle } from "../components/keyframe-toggle";
 import { isPropertyAtDefault } from "./transform-tab";
 import { resolveColorAtTime, resolveNumberAtTime } from "@/lib/animation";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
+import { falService } from "@/services/ai/fal-service";
+import { processMediaAssets } from "@/lib/media/processing";
+import { buildElementFromMedia } from "@/lib/timeline/element-utils";
+import { TICKS_PER_SECOND } from "@/lib/wasm";
+import { DEFAULT_NEW_ELEMENT_DURATION } from "@/lib/timeline/creation";
 import {
 	MinusSignIcon,
 	PlusSignIcon,
 	TextFontIcon,
+	SparklesIcon,
 } from "@hugeicons/core-free-icons";
 import { OcTextHeightIcon, OcTextWidthIcon } from "@/components/icons";
 import { DEFAULTS } from "@/lib/timeline/defaults";
@@ -69,6 +75,7 @@ function ContentSection({
 	trackId: string;
 }) {
 	const editor = useEditor();
+	const [isGeneratingSpeech, setIsGeneratingSpeech] = useState(false);
 
 	const content = usePropertyDraft({
 		displayValue: element.content,
@@ -82,12 +89,78 @@ function ContentSection({
 		onCommit: () => editor.timeline.commitPreview(),
 	});
 
+	const handleGenerateVoiceover = async () => {
+		if (!element.content.trim()) {
+			toast.error("Text content is empty");
+			return;
+		}
+		const activeProject = editor.project.getActive();
+		if (!activeProject) {
+			toast.error("No active project");
+			return;
+		}
+
+		setIsGeneratingSpeech(true);
+		const toastId = toast.loading("Synthesizing voiceover via fal.ai...");
+		try {
+			const result = await falService.generateSpeech({
+				text: element.content.trim(),
+			});
+
+			const res = await fetch(result.audioUrl);
+			if (!res.ok) throw new Error("Failed to download voiceover audio");
+			const blob = await res.blob();
+			const file = new File([blob], `Voiceover_${Date.now()}.mp3`, {
+				type: blob.type || "audio/mpeg",
+			});
+
+			const processedAssets = await processMediaAssets({ files: [file] });
+			if (processedAssets.length === 0) {
+				throw new Error("Failed to process voiceover audio");
+			}
+
+			const asset = processedAssets[0];
+			await editor.media.addMediaAsset({
+				projectId: activeProject.metadata.id,
+				asset,
+			});
+
+			const duration =
+				asset.duration != null
+					? Math.round(asset.duration * TICKS_PER_SECOND)
+					: DEFAULT_NEW_ELEMENT_DURATION;
+
+			const audioElement = buildElementFromMedia({
+				mediaId: asset.id,
+				mediaType: "audio",
+				name: asset.name,
+				duration,
+				startTime: element.startTime,
+			});
+
+			editor.timeline.insertElement({
+				element: audioElement,
+				placement: { mode: "auto" },
+			});
+
+			toast.success("Voiceover created and synced to text!", { id: toastId });
+		} catch (error) {
+			console.error("Voiceover generation failed:", error);
+			toast.error(
+				error instanceof Error ? error.message : "Voiceover generation failed",
+				{ id: toastId },
+			);
+		} finally {
+			setIsGeneratingSpeech(false);
+		}
+	};
+
 	return (
 		<Section collapsible sectionKey={`${element.id}:content`}>
 			<SectionHeader>
 				<SectionTitle>Content</SectionTitle>
 			</SectionHeader>
-			<SectionContent>
+			<SectionContent className="space-y-2">
 				<Textarea
 					placeholder="Name"
 					value={content.displayValue}
@@ -96,6 +169,26 @@ function ContentSection({
 					onChange={content.onChange}
 					onBlur={content.onBlur}
 				/>
+				<Button
+					type="button"
+					variant="outline"
+					size="sm"
+					className="w-full text-xs h-7.5 gap-1.5"
+					onClick={handleGenerateVoiceover}
+					disabled={isGeneratingSpeech || !element.content.trim()}
+				>
+					{isGeneratingSpeech ? (
+						<>
+							<Spinner className="size-3" />
+							<span>Synthesizing Voice...</span>
+						</>
+					) : (
+						<>
+							<HugeiconsIcon icon={SparklesIcon} className="size-3.5" />
+							<span>Generate AI Voiceover</span>
+						</>
+					)}
+				</Button>
 			</SectionContent>
 		</Section>
 	);

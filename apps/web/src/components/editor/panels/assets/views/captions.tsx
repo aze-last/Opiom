@@ -24,6 +24,9 @@ import { buildCaptionChunks } from "@/lib/transcription/caption";
 import { insertCaptionChunksAsTextTrack } from "@/lib/subtitles/insert";
 import { parseSubtitleFile } from "@/lib/subtitles/parse";
 import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
+import { useTranscriptEditorStore } from "@/stores/transcript-editor-store";
+import { TranscriptEditorView } from "./transcript-editor";
 import {
 	Section,
 	SectionContent,
@@ -39,6 +42,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { DiagnosticSeverity } from "@/lib/diagnostics/types";
+import { cn } from "@/utils/ui";
 
 const DIAGNOSTIC_BUTTON_VARIANT: Record<
 	DiagnosticSeverity,
@@ -82,6 +86,7 @@ function processingReducer(
 }
 
 export function Captions() {
+	const { activeMode, setActiveMode } = useTranscriptEditorStore();
 	const [selectedLanguage, setSelectedLanguage] =
 		useState<TranscriptionLanguage>("auto");
 	const [processing, dispatch] = useReducer(processingReducer, IDLE_STATE);
@@ -144,6 +149,7 @@ export function Captions() {
 				return;
 			}
 
+			useTranscriptEditorStore.getState().setSegments(result.segments);
 			dispatch({ type: "succeed", warnings: [] });
 		} catch (error) {
 			console.error("Transcription failed:", error);
@@ -237,103 +243,143 @@ export function Captions() {
 
 	return (
 		<PanelView
-			title="Captions"
+			title="Captions & Text"
 			contentClassName="px-0 flex flex-col h-full"
 			actions={
-				<TooltipProvider>
-					<div className="flex items-center gap-1.5">
-						{!isProcessing &&
-							activeDiagnostics.map((diagnostic) => (
-								<Tooltip key={diagnostic.id}>
-									<TooltipTrigger asChild>
-										<Button
-											variant={DIAGNOSTIC_BUTTON_VARIANT[diagnostic.severity]}
-											size="icon"
-											aria-label={diagnostic.message}
-										>
-											<HugeiconsIcon icon={AlertCircleIcon} size={16} />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{diagnostic.message}
-									</TooltipContent>
-								</Tooltip>
-							))}
-						<Button
+				<div className="flex items-center gap-2">
+					<div className="flex bg-muted/60 p-0.5 rounded-md">
+						<button
 							type="button"
-							variant="outline"
-							size="sm"
-							onClick={handleImportClick}
-							disabled={isProcessing}
-							className="items-center justify-center gap-1.5"
+							onClick={() => setActiveMode("captions")}
+							className={cn(
+								"px-2 py-0.5 text-xs rounded font-medium transition-all cursor-pointer",
+								activeMode === "captions"
+									? "bg-background text-foreground shadow-xs"
+									: "text-muted-foreground hover:text-foreground",
+							)}
 						>
-							<HugeiconsIcon icon={CloudUploadIcon} />
-							Import
-						</Button>
+							Subtitles
+						</button>
+						<button
+							type="button"
+							onClick={() => setActiveMode("editor")}
+							className={cn(
+								"px-2 py-0.5 text-xs rounded font-medium transition-all cursor-pointer flex items-center gap-1",
+								activeMode === "editor"
+									? "bg-background text-foreground shadow-xs"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+						>
+							<span>Text Editor</span>
+							<Badge className="h-3.5 px-1 text-[8px] bg-primary/10 text-primary border-primary/20">
+								AI
+							</Badge>
+						</button>
 					</div>
-				</TooltipProvider>
+
+					{activeMode === "captions" && (
+						<TooltipProvider>
+							<div className="flex items-center gap-1.5">
+								{!isProcessing &&
+									activeDiagnostics.map((diagnostic) => (
+										<Tooltip key={diagnostic.id}>
+											<TooltipTrigger asChild>
+												<Button
+													variant={
+														DIAGNOSTIC_BUTTON_VARIANT[diagnostic.severity]
+													}
+													size="icon"
+													aria-label={diagnostic.message}
+												>
+													<HugeiconsIcon icon={AlertCircleIcon} size={16} />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>{diagnostic.message}</TooltipContent>
+										</Tooltip>
+									))}
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={handleImportClick}
+									disabled={isProcessing}
+									className="items-center justify-center gap-1.5"
+								>
+									<HugeiconsIcon icon={CloudUploadIcon} />
+									Import
+								</Button>
+							</div>
+						</TooltipProvider>
+					)}
+				</div>
 			}
 			ref={containerRef}
 		>
-			<input
-				ref={fileInputRef}
-				type="file"
-				accept=".srt,.ass"
-				className="hidden"
-				onChange={(event) => void handleFileChange({ event })}
-			/>
-			<Section
-				showTopBorder={false}
-				showBottomBorder={false}
-				className="flex-1"
-			>
-				<SectionContent className="flex flex-col gap-4 h-full pt-1">
-					<SectionFields>
-						<SectionField label="Language">
-							<Select
-								value={selectedLanguage}
-								onValueChange={(value) => handleLanguageChange({ value })}
-							>
-								<SelectTrigger>
-									<SelectValue placeholder="Select a language" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="auto">Auto detect</SelectItem>
-									{TRANSCRIPTION_LANGUAGES.map((language) => (
-										<SelectItem key={language.code} value={language.code}>
-											{language.name}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</SectionField>
-					</SectionFields>
-
-					<Button
-						type="button"
-						className="mt-auto w-full"
-						onClick={handleGenerateTranscript}
-						disabled={isProcessing || activeDiagnostics.length > 0}
+			{activeMode === "editor" ? (
+				<TranscriptEditorView />
+			) : (
+				<>
+					<input
+						ref={fileInputRef}
+						type="file"
+						accept=".srt,.ass"
+						className="hidden"
+						onChange={(event) => void handleFileChange({ event })}
+					/>
+					<Section
+						showTopBorder={false}
+						showBottomBorder={false}
+						className="flex-1"
 					>
-						{isProcessing && <Spinner className="mr-1" />}
-						{isProcessing ? processing.step : "Generate transcript"}
-					</Button>
-					{error && (
-						<div className="bg-destructive/10 border-destructive/20 rounded-md border p-3">
-							<p className="text-destructive text-sm">{error}</p>
-						</div>
-					)}
-					{warnings.length > 0 && (
-						<div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3">
-							<ul className="space-y-1 text-sm text-amber-700">
-								{warnings.map((warning) => (
-									<li key={warning}>{warning}</li>
-								))}
-							</ul>
-						</div>
-					)}
-				</SectionContent>
-			</Section>
+						<SectionContent className="flex flex-col gap-4 h-full pt-1">
+							<SectionFields>
+								<SectionField label="Language">
+									<Select
+										value={selectedLanguage}
+										onValueChange={(value) => handleLanguageChange({ value })}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select a language" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="auto">Auto detect</SelectItem>
+											{TRANSCRIPTION_LANGUAGES.map((language) => (
+												<SelectItem key={language.code} value={language.code}>
+													{language.name}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</SectionField>
+							</SectionFields>
+
+							<Button
+								type="button"
+								className="mt-auto w-full"
+								onClick={handleGenerateTranscript}
+								disabled={isProcessing || activeDiagnostics.length > 0}
+							>
+								{isProcessing && <Spinner className="mr-1" />}
+								{isProcessing ? processing.step : "Generate transcript"}
+							</Button>
+							{error && (
+								<div className="bg-destructive/10 border-destructive/20 rounded-md border p-3">
+									<p className="text-destructive text-sm">{error}</p>
+								</div>
+							)}
+							{warnings.length > 0 && (
+								<div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3">
+									<ul className="space-y-1 text-sm text-amber-700">
+										{warnings.map((warning) => (
+											<li key={warning}>{warning}</li>
+										))}
+									</ul>
+								</div>
+							)}
+						</SectionContent>
+					</Section>
+				</>
+			)}
 		</PanelView>
 	);
 }

@@ -11,7 +11,7 @@ import {
 	TextIcon,
 	Settings01Icon,
 	SlidersHorizontalIcon,
-	ColorsIcon,
+	AiBrain05Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 
@@ -19,6 +19,7 @@ export const TAB_KEYS = [
 	"media",
 	"sounds",
 	"text",
+	"ai",
 	"stickers",
 	"effects",
 	"transitions",
@@ -47,6 +48,10 @@ export const tabs = {
 	text: {
 		icon: createHugeiconsIcon({ icon: TextIcon }),
 		label: "Text",
+	},
+	ai: {
+		icon: createHugeiconsIcon({ icon: AiBrain05Icon }),
+		label: "AI Studio",
 	},
 	stickers: {
 		icon: createHugeiconsIcon({ icon: Happy01Icon }),

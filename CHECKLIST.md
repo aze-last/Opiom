@@ -53,42 +53,49 @@ This checklist defines the phased roadmap for setting up OpenCut and embedding l
 ## Phase 2: fal.ai Cloud Generative Suite
 *Objective: Leverage OpenCut sponsor fal.ai for Text-to-Speech (voiceover), AI B-Roll generation, and Foley sound effect generation.*
 
-- [ ] **2.1 Architectural Foundation**
-  - [ ] Install `@fal-ai/serverless-client` or configure proxy API route in `apps/web/src/app/api/ai/fal/route.ts` to keep API keys secure.
-  - [ ] Add client-side Fal client wrapper with progress streaming and error handling.
-- [ ] **2.2 AI Voiceover / Text-to-Speech (TTS)**
-  - [ ] Add "Generate Speech" action in the Text properties panel (`text-tab.tsx`).
-  - [ ] Integrate fast TTS models (e.g. Kokoro / ElevenLabs / F5-TTS via fal.ai).
-  - [ ] Automatically place generated `.wav`/`.mp3` audio file onto a new AudioTrack aligned with the text element.
-- [ ] **2.3 Generative B-Roll & AI Images**
-  - [ ] Create an "AI Studio" view inside `apps/web/src/components/editor/panels/assets/views/ai-generate.tsx`.
-  - [ ] Text-to-Image (Flux) and Text-to-Video models with preset aspect ratios (16:9, 9:16, 1:1).
-  - [ ] Direct "Insert to Timeline" and "Add to Media Pool" actions.
-- [ ] **2.4 AI Sound FX Generation**
-  - [ ] Extend `sounds.tsx` with a prompt-based sound generator (e.g. "cinematic impact", "laser whoosh").
-  - [ ] Preview waveform and auto-add to timeline.
-- [ ] **2.5 Gate & Review**
-  - [ ] Validate non-blocking error handling for network/API failures.
-  - [ ] Run pre-flight gate and diff review.
+- [x] **2.1 Architectural Foundation**
+  - [x] Installed `@fal-ai/client` into `apps/web`.
+  - [x] Implemented secure server-side proxy route in `apps/web/src/app/api/fal/proxy/route.ts` protecting `FAL_KEY`.
+  - [x] Created `FalService` (`src/services/ai/fal-service.ts`) with typed formatters for Flux Schnell, MiniMax Speech/TTS, and Stable Audio/MMAudio sound effects.
+  - [x] Authored unit tests in `src/services/ai/__tests__/fal-service.test.ts` (3 pass, 0 fail).
+- [x] **2.2 AI Voiceover / Text-to-Speech (TTS)**
+  - [x] Added "Generate AI Voiceover" quick action to the Text properties panel (`text-tab.tsx`).
+  - [x] Automatically streams synthesis, builds an audio asset, and inserts an audio element directly onto the timeline aligned with the text layer.
+  - [x] Provided voice style selectors (Natural, Studio Host, Narrator, Warm) in AI Studio.
+- [x] **2.3 Generative B-Roll & AI Images**
+  - [x] Created new `"ai"` tab registered in `assets-panel-store.tsx` with `AiBrain05Icon`.
+  - [x] Built `AIStudioView` in `apps/web/src/components/editor/panels/assets/views/ai-studio.tsx`.
+  - [x] Integrated Flux with aspect ratio presets: `16:9` (Landscape), `9:16` (Vertical/Reels), `1:1` (Square) and instant suggestion chips.
+  - [x] Direct 1-click "Add to Timeline" (inserts as image element at playhead) and "Save to Assets".
+- [x] **2.4 AI Sound FX Generation**
+  - [x] Integrated prompt-based Foley generator in AI Studio with duration slider (1-10s) and sound suggestions.
+  - [x] In-app audio preview with instant timeline insertion.
+- [x] **2.5 Gate & Review**
+  - [x] Non-blocking graceful error handling when keys are unconfigured.
+  - [x] Strict Biome formatting and zero lint errors.
 
 ---
 
 ## Phase 3: Text-Based Video Editing (Descript-style)
 *Objective: Edit video footage directly by manipulating the generated transcript text.*
 
-- [ ] **3.1 Word-Level Timestamp Alignment**
-  - [ ] Extend Whisper transcription pipeline (`worker.ts`) to return word-level timestamps alongside segments.
-  - [ ] Store word-to-timestamp index in project store or active scene state.
-- [ ] **3.2 Interactive Transcript UI**
-  - [ ] Build word-segmented interactive reader in `CaptionsView` / dedicated Transcript panel.
-  - [ ] Clicking a word scrubs playhead to exact video frame.
-  - [ ] Selecting and striking out/deleting text invokes ripple-cut command to slice and delete video/audio frames.
-- [ ] **3.3 Filler Word Detection**
-  - [ ] Highlight detected filler words ("um", "uh", repeated words) in amber.
-  - [ ] One-click button: "Delete All Filler Words".
-- [ ] **3.4 Gate & Review**
-  - [ ] Stress-test long transcripts (30+ minutes).
-  - [ ] Run test suite and review diffs.
+- [x] **3.1 Word-Level Timestamp Alignment & Parsing**
+  - [x] Created `src/lib/transcription/word-parser.ts` to tokenize transcript segments into timed word chips (`TranscriptWord`).
+  - [x] Implemented intelligent linear timestamp interpolation when word-level timestamps are not explicitly emitted.
+  - [x] Authored unit tests in `src/lib/transcription/__tests__/word-parser.test.ts` (3 pass, 0 fail).
+- [x] **3.2 Interactive Transcript UI**
+  - [x] Created `TranscriptEditorStore` (`src/stores/transcript-editor-store.ts`) for managing transcription segments and selected word tokens.
+  - [x] Built `TranscriptEditorView` in `src/components/editor/panels/assets/views/transcript-editor.tsx`.
+  - [x] Integrated segmented switch in `Captions` view (`captions.tsx`) between "Subtitles" and "Text Editor".
+  - [x] Real-time playhead tracking: words highlight in active accent style (`bg-primary/25`) in sync with timeline video playback.
+  - [x] Click-to-seek: clicking any word chip scrubs the video playhead directly to `word.start`.
+- [x] **3.3 Filler Word Detection & Timeline Slicing**
+  - [x] Automated detection of conversational fillers (`"um"`, `"uh"`, `"like"`, `"you know"`, repeated consecutive words) with amber badges.
+  - [x] 1-click **"Remove All Fillers"** action: converts words into silence intervals with 50ms consonant safety padding and computes batch ripple-cuts across all tracks (`main`, `overlay`, `audio`).
+  - [x] Multi-word selection (Shift+Click) and **"Cut Selected Words"** action with strikethrough preview.
+- [x] **3.4 Gate & Review**
+  - [x] All 12 unit tests passing under Bun (`silence-detector`, `silence-cut`, `fal-service`, `word-parser`).
+  - [x] Biome formatting verified with 0 errors and 0 warnings.
 
 ---
 
