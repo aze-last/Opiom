@@ -38,12 +38,21 @@ export function MediaDragOverlay({
 				<HugeiconsIcon icon={UploadIcon} className="text-foreground size-10" />
 			</div>
 
-			<div className="space-y-2">
-				<p className="text-muted-foreground max-w-sm text-xs">
-					{isProcessing
-						? `Processing your files (${progress}%)`
-						: "Drag and drop videos, photos, and audio files here"}
-				</p>
+			<div className="space-y-1">
+				{isProcessing ? (
+					<p className="text-muted-foreground max-w-sm text-xs">
+						Processing your files ({progress}%)
+					</p>
+				) : (
+					<>
+						<p className="text-foreground text-xs font-medium">
+							Click or drag videos & audio here
+						</p>
+						<p className="text-muted-foreground max-w-xs text-[11px]">
+							Supports MP4, MOV, WebM, MP3, WAV, JPG, PNG. Check the left sidebar tabs for built-in Sounds, Stickers & Text!
+						</p>
+					</>
+				)}
 			</div>
 
 			{isProcessing && (

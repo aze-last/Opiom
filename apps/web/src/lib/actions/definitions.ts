@@ -169,7 +169,7 @@ const ACTION_DEFAULT_SHORTCUTS = {
 	"jump-backward": ["shift+left"],
 	"goto-start": ["home", "enter"],
 	"goto-end": ["end"],
-	split: ["s"],
+	split: ["s", "c", "b"],
 	"split-left": ["q"],
 	"split-right": ["w"],
 	"remove-silence": ["alt+s"],
