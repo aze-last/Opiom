@@ -29,8 +29,9 @@ import {
 	type SilenceIntervalWithTicks,
 } from "@/lib/timeline/silence-cut";
 import { TICKS_PER_SECOND } from "@/lib/wasm";
+import type { TimelineElement } from "@/lib/timeline/types";
 import { toast } from "sonner";
-import { ScissorsIcon, VolumeMute02Icon } from "@hugeicons/core-free-icons";
+import { ScissorIcon, VolumeMute02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 export function SilenceRemoverDialog() {
@@ -162,7 +163,7 @@ export function SilenceRemoverDialog() {
 			const newOverlayTracks = currentTracks.overlay.map((track) => ({
 				...track,
 				elements: computeSilenceCuts({
-					elements: track.elements,
+					elements: track.elements as TimelineElement[],
 					intervals: intervalsWithTicks,
 				}),
 			}));
@@ -176,7 +177,7 @@ export function SilenceRemoverDialog() {
 			}));
 
 			const updatedTracks = {
-				overlay: newOverlayTracks,
+				overlay: newOverlayTracks as typeof currentTracks.overlay,
 				main: newMainTrack,
 				audio: newAudioTracks,
 			};
@@ -206,7 +207,7 @@ export function SilenceRemoverDialog() {
 				<DialogHeader className="space-y-1.5">
 					<div className="flex items-center gap-2">
 						<div className="p-2 rounded-lg bg-primary/10 text-primary">
-							<HugeiconsIcon icon={ScissorsIcon} size={20} />
+							<HugeiconsIcon icon={ScissorIcon} size={20} />
 						</div>
 						<div>
 							<DialogTitle className="text-base font-semibold tracking-tight">

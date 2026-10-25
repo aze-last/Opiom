@@ -29,7 +29,7 @@ import {
 	PlusSignIcon,
 	Download01Icon,
 	SparklesIcon,
-	Scissors01Icon,
+	ScissorIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { AIClipperContent } from "./ai-clipper";
@@ -108,10 +108,13 @@ export function AIStudioView() {
 			}
 
 			const asset = processedAssets[0];
-			await editor.media.addMediaAsset({
+			const addedAsset = await editor.media.addMediaAsset({
 				projectId: activeProject.metadata.id,
 				asset,
 			});
+			if (!addedAsset) {
+				throw new Error("Failed to save media asset");
+			}
 
 			if (addToTimeline) {
 				const duration =
@@ -122,9 +125,9 @@ export function AIStudioView() {
 				const startTime = Math.round(playheadTime * TICKS_PER_SECOND);
 
 				const element = buildElementFromMedia({
-					mediaId: asset.id,
-					mediaType: asset.type,
-					name: asset.name,
+					mediaId: addedAsset.id,
+					mediaType: addedAsset.type,
+					name: addedAsset.name,
 					duration,
 					startTime,
 				});
@@ -270,7 +273,7 @@ export function AIStudioView() {
 						value="clipper"
 						className="flex items-center gap-1.5 text-xs py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-xs"
 					>
-						<HugeiconsIcon icon={Scissors01Icon} className="size-3.5" />
+						<HugeiconsIcon icon={ScissorIcon} className="size-3.5" />
 						<span>Clipper</span>
 					</TabsTrigger>
 				</TabsList>

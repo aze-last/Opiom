@@ -518,10 +518,8 @@ function AutoReframeSection({
 						patch: {
 							transform: {
 								...element.transform,
-								scale: {
-									x: Math.round(element.transform.scale.x * scale),
-									y: Math.round(element.transform.scale.y * scale),
-								},
+								scaleX: Math.round(element.transform.scaleX * scale),
+								scaleY: Math.round(element.transform.scaleY * scale),
 							},
 							animations,
 						},

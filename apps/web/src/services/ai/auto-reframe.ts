@@ -1,8 +1,8 @@
 import { generateUUID } from "@/utils/id";
 import type {
 	ElementAnimations,
+	NumberAnimationBinding,
 	ScalarAnimationKey,
-	Vector2AnimationBinding,
 } from "@/lib/animation/types";
 
 export const TICKS_PER_SECOND = 120_000;
@@ -164,13 +164,16 @@ export function createReframeAnimations({
 	const channelIdX = `chan-pos-x-${generateUUID()}`;
 	const channelIdY = `chan-pos-y-${generateUUID()}`;
 
-	const binding: Vector2AnimationBinding = {
-		path: "transform.position",
-		kind: "vector2",
-		components: [
-			{ key: "x", channelId: channelIdX },
-			{ key: "y", channelId: channelIdY },
-		],
+	const bindingX: NumberAnimationBinding = {
+		path: "transform.positionX",
+		kind: "number",
+		components: [{ key: "value", channelId: channelIdX }],
+	};
+
+	const bindingY: NumberAnimationBinding = {
+		path: "transform.positionY",
+		kind: "number",
+		components: [{ key: "value", channelId: channelIdY }],
 	};
 
 	const keysX: ScalarAnimationKey[] = keyframes.map((k) => ({
@@ -178,6 +181,7 @@ export function createReframeAnimations({
 		time: k.time,
 		value: k.position.x,
 		segmentToNext: "linear",
+		tangentMode: "auto",
 	}));
 
 	const keysY: ScalarAnimationKey[] = keyframes.map((k) => ({
@@ -185,23 +189,31 @@ export function createReframeAnimations({
 		time: k.time,
 		value: k.position.y,
 		segmentToNext: "linear",
+		tangentMode: "auto",
 	}));
 
 	const nextBindings = {
 		...(existingAnimations?.bindings ?? {}),
-		"transform.position": binding,
+		"transform.positionX": bindingX,
+		"transform.positionY": bindingY,
 	};
 	const nextChannels = {
 		...(existingAnimations?.channels ?? {}),
 		[channelIdX]: {
 			kind: "scalar" as const,
 			keys: keysX,
-			extrapolation: "clamp" as const,
+			extrapolation: {
+				before: "hold" as const,
+				after: "hold" as const,
+			},
 		},
 		[channelIdY]: {
 			kind: "scalar" as const,
 			keys: keysY,
-			extrapolation: "clamp" as const,
+			extrapolation: {
+				before: "hold" as const,
+				after: "hold" as const,
+			},
 		},
 	};
 

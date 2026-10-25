@@ -84,7 +84,6 @@ export const ACTIONS = {
 	"remove-silence": {
 		description: "Detect and remove silence",
 		category: "editing",
-		defaultShortcuts: ["alt+s"],
 	},
 	"delete-selected": {
 		description: "Delete selected elements",
@@ -173,6 +172,7 @@ const ACTION_DEFAULT_SHORTCUTS = {
 	split: ["s"],
 	"split-left": ["q"],
 	"split-right": ["w"],
+	"remove-silence": ["alt+s"],
 	"delete-selected": ["backspace", "delete"],
 	"copy-selected": ["ctrl+c"],
 	"paste-copied": ["ctrl+v"],

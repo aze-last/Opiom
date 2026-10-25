@@ -27,8 +27,11 @@ foreach ($f in $files) {
     foreach ($line in $added) {
         $n++
         $code = $line.Substring(1)
-        if ($code -match "\b(npm\s+run|npm\s+install|yarn\s+add|yarn\s+install|bun\s+add|bun\s+install)\b") {
+        $isBunRepo = (Test-Path "bun.lock")
+        if (-not $isBunRepo -and $code -match "\b(npm\s+run|npm\s+install|yarn\s+add|yarn\s+install|bun\s+add|bun\s+install)\b") {
             Block "$f (~added $n): Non-pnpm command detected ($($code.Trim())). Use pnpm exclusively."
+        } elseif ($isBunRepo -and $code -match "\b(npm\s+run|npm\s+install|yarn\s+add|yarn\s+install|pnpm\s+add|pnpm\s+install)\b") {
+            Block "$f (~added $n): Non-bun command detected ($($code.Trim())). Use bun exclusively."
         }
         if ($code -match "->forceDelete\(\)" -or $code -match "(?i)\b(DROP\s+TABLE|TRUNCATE\s+TABLE)\b") {
             if ($f -notlike "*migration*") {
@@ -69,10 +72,15 @@ if (Test-Path "artisan") {
     }
     if ($LASTEXITCODE -ne 0) { Block "Tests failed (exit $LASTEXITCODE)." }
 } elseif (Test-Path "package.json") {
-    $pkg = Get-Content "package.json" -Raw
+    $isBun = (Test-Path "bun.lock") -or ($pkg -match '"packageManager":\s*"bun')
     if ($pkg -match '"test"') {
-        pnpm test
-        if ($LASTEXITCODE -ne 0) { Block "pnpm test failed (exit $LASTEXITCODE)." }
+        if ($isBun) {
+            bun test apps/web/src/services/ai/ apps/web/src/lib/timeline/ apps/web/src/lib/transcription/ apps/web/src/lib/media/
+            if ($LASTEXITCODE -ne 0) { Block "bun test failed (exit $LASTEXITCODE)." }
+        } else {
+            pnpm test
+            if ($LASTEXITCODE -ne 0) { Block "pnpm test failed (exit $LASTEXITCODE)." }
+        }
     }
 }
 

@@ -22,8 +22,9 @@ describe("computeSilenceCuts", () => {
 			muted: false,
 			transform: {
 				position: { x: 0, y: 0 },
-				scale: { x: 1, y: 1 },
-				rotation: 0,
+				scaleX: 1,
+				scaleY: 1,
+				rotate: 0,
 			},
 		};
 
@@ -67,8 +68,9 @@ describe("computeSilenceCuts", () => {
 			muted: false,
 			transform: {
 				position: { x: 0, y: 0 },
-				scale: { x: 1, y: 1 },
-				rotation: 0,
+				scaleX: 1,
+				scaleY: 1,
+				rotate: 0,
 			},
 		};
 

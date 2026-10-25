@@ -14,6 +14,8 @@ export interface TranscriptWordToken {
 	segmentIndex: number;
 }
 
+export type TranscriptWord = TranscriptWordToken;
+
 export const FILLER_WORDS = new Set([
 	"um",
 	"uh",

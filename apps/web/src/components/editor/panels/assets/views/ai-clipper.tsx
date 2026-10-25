@@ -22,13 +22,13 @@ import {
 import { TICKS_PER_SECOND } from "@/lib/wasm";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
-	Scissors01Icon,
+	ScissorIcon,
 	SparklesIcon,
 	PlayIcon,
 	Settings01Icon,
-	FlameIcon,
 	Time02Icon,
 	AiBrain05Icon,
+	FireIcon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/utils/ui";
 import Link from "next/link";
@@ -326,7 +326,7 @@ export function AIClipperContent() {
 												: "bg-amber-500/15 text-amber-400 border border-amber-500/30",
 										)}
 									>
-										<HugeiconsIcon icon={FlameIcon} className="size-3" />
+										<HugeiconsIcon icon={FireIcon} className="size-3" />
 										<span>{clip.viralityScore}%</span>
 									</div>
 								</div>
@@ -350,7 +350,7 @@ export function AIClipperContent() {
 										<Button
 											type="button"
 											variant="secondary"
-											size="xs"
+											size="sm"
 											className="h-6 text-[10px] gap-1 px-2"
 											onClick={() => handleSeekClip(clip)}
 										>
@@ -361,11 +361,11 @@ export function AIClipperContent() {
 										<Button
 											type="button"
 											variant="default"
-											size="xs"
+											size="sm"
 											className="h-6 text-[10px] gap-1 px-2"
 											onClick={() => handleSliceClipToTimeline(clip)}
 										>
-											<HugeiconsIcon icon={Scissors01Icon} className="size-3" />
+											<HugeiconsIcon icon={ScissorIcon} className="size-3" />
 											<span>Keep Clip</span>
 										</Button>
 									</div>

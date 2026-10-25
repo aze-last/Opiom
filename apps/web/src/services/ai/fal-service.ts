@@ -1,4 +1,5 @@
 export type AspectRatio = "16:9" | "9:16" | "1:1" | "4:3";
+export type FalAspectRatio = AspectRatio;
 
 export type FalImageSize =
 	| "landscape_16_9"
@@ -8,17 +9,20 @@ export type FalImageSize =
 
 export interface FalImageResult {
 	url: string;
+	imageUrl: string;
 	width: number;
 	height: number;
 }
 
 export interface FalSpeechResult {
 	url: string;
+	audioUrl: string;
 	duration?: number;
 }
 
 export interface FalSoundResult {
 	url: string;
+	audioUrl: string;
 }
 
 export function mapAspectRatioToFalImageSize(ratio: AspectRatio): FalImageSize {
@@ -102,6 +106,7 @@ export class FalService {
 
 		return {
 			url: image.url,
+			imageUrl: image.url,
 			width: image.width || (aspectRatio === "9:16" ? 1080 : 1920),
 			height: image.height || (aspectRatio === "9:16" ? 1920 : 1080),
 		};
@@ -142,21 +147,27 @@ export class FalService {
 
 		return {
 			url: audioUrl,
+			audioUrl,
 			duration: data.duration,
 		};
 	}
 
 	async generateSoundEffect({
 		prompt,
+		durationSeconds,
 	}: {
 		prompt: string;
+		durationSeconds?: number;
 	}): Promise<FalSoundResult> {
 		const response = await fetch(
 			`${this.proxyUrl}?targetUrl=${encodeURIComponent("https://fal.run/fal-ai/stable-audio")}`,
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ prompt, seconds_total: 4 }),
+				body: JSON.stringify({
+					prompt,
+					seconds_total: durationSeconds || 4,
+				}),
 			},
 		);
 
@@ -175,7 +186,7 @@ export class FalService {
 			throw new Error("No sound effect returned from Fal API");
 		}
 
-		return { url: audioUrl };
+		return { url: audioUrl, audioUrl };
 	}
 }
 

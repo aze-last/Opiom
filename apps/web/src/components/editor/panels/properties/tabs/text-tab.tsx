@@ -120,10 +120,13 @@ function ContentSection({
 			}
 
 			const asset = processedAssets[0];
-			await editor.media.addMediaAsset({
+			const addedAsset = await editor.media.addMediaAsset({
 				projectId: activeProject.metadata.id,
 				asset,
 			});
+			if (!addedAsset) {
+				throw new Error("Failed to save voiceover audio asset");
+			}
 
 			const duration =
 				asset.duration != null
@@ -131,7 +134,7 @@ function ContentSection({
 					: DEFAULT_NEW_ELEMENT_DURATION;
 
 			const audioElement = buildElementFromMedia({
-				mediaId: asset.id,
+				mediaId: addedAsset.id,
 				mediaType: "audio",
 				name: asset.name,
 				duration,

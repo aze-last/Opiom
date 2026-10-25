@@ -10,10 +10,8 @@ import {
 	convertWordsToSilenceCuts,
 	type TranscriptWord,
 } from "@/lib/transcription/word-parser";
-import {
-	computeSilenceCuts,
-	type SilenceIntervalWithTicks,
-} from "@/lib/timeline/silence-cut";
+import { computeSilenceCuts } from "@/lib/timeline/silence-cut";
+import type { TimelineElement } from "@/lib/timeline/types";
 import { TICKS_PER_SECOND } from "@/lib/wasm";
 import { extractTimelineAudio } from "@/lib/media/mediabunny";
 import { decodeAudioToFloat32 } from "@/lib/media/audio";
@@ -29,7 +27,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-	ScissorsIcon,
+	ScissorIcon,
 	SparklesIcon,
 	Delete02Icon,
 	AiBrain05Icon,
@@ -151,24 +149,10 @@ export function TranscriptEditorView() {
 
 		try {
 			// Convert words to silence cut intervals with 50ms safety padding
-			const cutIntervals = convertWordsToSilenceCuts({
+			const intervalsWithTicks = convertWordsToSilenceCuts({
 				wordsToDelete: wordsToCut,
-				consonantPaddingMs: 50,
+				paddingSeconds: 0.05,
 			});
-
-			const intervalsWithTicks: SilenceIntervalWithTicks[] = cutIntervals.map(
-				(interval) => {
-					const startTicks = Math.round(interval.start * TICKS_PER_SECOND);
-					const endTicks = Math.round(interval.end * TICKS_PER_SECOND);
-					return {
-						startSeconds: interval.start,
-						endSeconds: interval.end,
-						startTicks,
-						endTicks,
-						durationTicks: endTicks - startTicks,
-					};
-				},
-			);
 
 			const currentTracks = activeScene.tracks;
 
@@ -183,7 +167,7 @@ export function TranscriptEditorView() {
 			const newOverlayTracks = currentTracks.overlay.map((track) => ({
 				...track,
 				elements: computeSilenceCuts({
-					elements: track.elements,
+					elements: track.elements as TimelineElement[],
 					intervals: intervalsWithTicks,
 				}),
 			}));
@@ -197,7 +181,7 @@ export function TranscriptEditorView() {
 			}));
 
 			const updatedTracks = {
-				overlay: newOverlayTracks,
+				overlay: newOverlayTracks as typeof currentTracks.overlay,
 				main: newMainTrack,
 				audio: newAudioTracks,
 			};
@@ -304,7 +288,7 @@ export function TranscriptEditorView() {
 							onClick={() => handleCutWords(fillerWords)}
 							disabled={isApplyingCut}
 						>
-							<HugeiconsIcon icon={ScissorsIcon} className="size-3.5" />
+							<HugeiconsIcon icon={ScissorIcon} className="size-3.5" />
 							<span>Remove All Fillers ({fillerWords.length})</span>
 						</Button>
 					)}

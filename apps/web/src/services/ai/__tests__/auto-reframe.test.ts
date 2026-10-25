@@ -102,7 +102,8 @@ describe("auto-reframe algorithm & keyframe generation", () => {
 		expect(result.targetCanvasSize).toEqual({ width: 1080, height: 1920 });
 		expect(result.scale).toBeCloseTo(1.7778, 3);
 		expect(result.animations).toBeDefined();
-		expect(result.animations?.bindings["transform.position"]).toBeDefined();
+		expect(result.animations?.bindings["transform.positionX"]).toBeDefined();
+		expect(result.animations?.bindings["transform.positionY"]).toBeDefined();
 	});
 
 	it("generates synthetic focal trajectory samples over duration", () => {
