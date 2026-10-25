@@ -32,8 +32,21 @@ export class OPFSAdapter implements StorageAdapter<File> {
 		const fileHandle = await directory.getFileHandle(key, { create: true });
 		const writable = await fileHandle.createWritable();
 
-		await writable.write(file);
-		await writable.close();
+		try {
+			if (typeof file.stream === "function") {
+				await file.stream().pipeTo(writable);
+			} else {
+				await writable.write(file);
+				await writable.close();
+			}
+		} catch (error) {
+			try {
+				await writable.abort();
+			} catch {
+				// Ignore abort failure so primary storage error is thrown
+			}
+			throw error;
+		}
 	}
 
 	async remove(key: string): Promise<void> {

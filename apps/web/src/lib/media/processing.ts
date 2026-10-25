@@ -190,18 +190,28 @@ export async function processMediaAssets({
 			continue;
 		}
 
+		if (
+			file.size > 500 * 1024 * 1024 &&
+			typeof navigator !== "undefined" &&
+			navigator.storage?.persist
+		) {
+			try {
+				await navigator.storage.persist();
+			} catch {
+				// Ignore permission denial
+			}
+		}
+
 		const storageCheck = await storageService.canStoreFile({
 			size: file.size,
 		});
 
+		let isDirectSession = false;
 		if (!storageCheck.canStore) {
-			toast.error(`Not enough browser storage for ${file.name}`, {
-				description: getStorageLimitDescription({
-					fileSize: file.size,
-					availableBytes: storageCheck.availableBytes,
-				}),
+			isDirectSession = true;
+			toast.info(`Importing ${file.name} in Direct Session Mode`, {
+				description: `File size is ${formatStorageBytes({ bytes: file.size })}. Loaded directly from your drive so you can edit and export freely without browser storage caps.`,
 			});
-			continue;
 		}
 
 		const url = URL.createObjectURL(file);
@@ -252,6 +262,7 @@ export async function processMediaAssets({
 				height,
 				fps,
 				hasAudio,
+				ephemeral: isDirectSession,
 			});
 
 			await new Promise((resolve) => setTimeout(resolve, 0));

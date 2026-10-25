@@ -270,6 +270,11 @@ class StorageService {
 			ephemeral: mediaAsset.ephemeral,
 		};
 
+		if (mediaAsset.ephemeral) {
+			await mediaMetadataAdapter.set(mediaAsset.id, metadata);
+			return;
+		}
+
 		try {
 			await mediaAssetsAdapter.set(mediaAsset.id, mediaAsset.file);
 			await mediaMetadataAdapter.set(mediaAsset.id, metadata);
@@ -281,9 +286,11 @@ class StorageService {
 			}
 
 			if (this.isQuotaExceededError({ error })) {
-				throw new StorageQuotaExceededError({
-					requiredBytes: mediaAsset.file.size,
-				});
+				// Fallback to ephemeral direct session mode so video remains usable
+				metadata.ephemeral = true;
+				mediaAsset.ephemeral = true;
+				await mediaMetadataAdapter.set(mediaAsset.id, metadata);
+				return;
 			}
 
 			throw error;

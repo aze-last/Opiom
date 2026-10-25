@@ -146,7 +146,7 @@ export function MediaView() {
 	};
 
 	const filteredMediaItems = useMemo(() => {
-		const filtered = mediaFiles.filter((item) => !item.ephemeral);
+		const filtered = [...mediaFiles];
 
 		filtered.sort((a, b) => {
 			let valueA: string | number;
@@ -469,6 +469,14 @@ function MediaPreview({
 						loading="lazy"
 						unoptimized
 					/>
+					{shouldShowDurationBadge && item.ephemeral ? (
+						<div
+							className="absolute top-1 left-1 rounded bg-blue-500/85 backdrop-blur-xs px-1 text-[10px] font-medium text-white select-none shadow-xs"
+							title="Direct Session Mode: Loaded directly from local disk without storage limits"
+						>
+							Direct
+						</div>
+					) : null}
 					{shouldShowDurationBadge ? (
 						<MediaDurationBadge duration={item.duration} />
 					) : null}
