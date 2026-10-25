@@ -46,6 +46,10 @@ export function Header() {
 			label: "Blog",
 			href: "/blog",
 		},
+		{
+			label: "AI Settings",
+			href: "/settings",
+		},
 	];
 
 	return (

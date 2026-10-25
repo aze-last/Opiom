@@ -120,6 +120,31 @@ This checklist defines the phased roadmap for setting up OpenCut and embedding l
 
 ---
 
+## Phase 5: AI Clipper & Bring-Your-Own LLM Suite
+*Objective: Automated viral shorts and highlights detection powered by user-provided custom LLM endpoints (OpenAI, Ollama, DeepSeek, OpenRouter, Groq, or custom base URL).*
+
+- [x] **5.1 Custom LLM Store & Architecture**
+  - [x] Implemented `src/stores/ai-provider-store.ts` with local-first persistent storage (`localStorage`).
+  - [x] Added provider presets (OpenAI, Ollama Local, OpenRouter, DeepSeek, Groq, Custom).
+  - [x] Password masking for API secrets with reveal toggle.
+- [x] **5.2 AI Clipper & Virality Extraction Engine**
+  - [x] Created `src/services/ai/clipper-service.ts` for OpenAI-compatible chat completions and connection testing.
+  - [x] Built intelligent local heuristic fallback clipper for instant offline highlights and virality scoring.
+  - [x] Authored unit tests in `src/services/ai/__tests__/clipper-service.test.ts` (4 pass, 0 fail).
+- [x] **5.3 Dedicated Settings Page & In-Editor Configuration**
+  - [x] Created dedicated `/settings` page (`app/settings/page.tsx`) with zero-knowledge local storage security badge.
+  - [x] Added "AI & Keys" tab into in-editor SettingsView (`settings/index.tsx`).
+  - [x] Added global navigation link in `header.tsx`.
+- [x] **5.4 Interactive AI Clipper UI**
+  - [x] Built `AIClipperView` and `AIClipperContent` (`ai-clipper.tsx`).
+  - [x] Integrated as a 4th tab in `AIStudioView` (`ai-studio.tsx`) with duration filters (<30s, 30-60s, 60-90s, Any).
+  - [x] Hooked up 1-click timeline seeking and clip isolation.
+- [x] **5.5 Gate & Review**
+  - [x] 25 AI unit tests passing across all suites.
+  - [x] Biome check with 0 errors and 0 warnings.
+
+---
+
 ## Execution Progress Tracker
 
 | Milestone | Status | Lead Role | Exit Gate Criteria |
@@ -129,4 +154,6 @@ This checklist defines the phased roadmap for setting up OpenCut and embedding l
 | **Phase 2: fal.ai Suite** | Completed | Coder + Designer | Cloud TTS & B-roll imported to timeline |
 | **Phase 3: Text-Based Editing** | Completed | Coder + Verifier | Transcript deletions slice timeline |
 | **Phase 4: Auto-Masking & Reframe**| Completed | Coder + Designer + Rust Lead | Real-time mask rendering on GPU & Keyframed Pan |
+| **Phase 5: AI Clipper & Custom LLM**| Completed | Autonomous Worker + Designer | Custom Base URL/Key settings & Viral Clipper UI |
+
 

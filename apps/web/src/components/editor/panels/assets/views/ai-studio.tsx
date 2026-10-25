@@ -29,8 +29,10 @@ import {
 	PlusSignIcon,
 	Download01Icon,
 	SparklesIcon,
+	Scissors01Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { AIClipperContent } from "./ai-clipper";
 
 const IMAGE_SUGGESTIONS = [
 	"Cinematic drone shot of misty pine mountains at sunrise, 8k hyperrealistic",
@@ -50,9 +52,9 @@ export function AIStudioView() {
 	const editor = useEditor();
 	const activeProject = useEditor((e) => e.project.getActive());
 
-	const [activeSubTab, setActiveSubTab] = useState<"image" | "voice" | "sfx">(
-		"image",
-	);
+	const [activeSubTab, setActiveSubTab] = useState<
+		"image" | "voice" | "sfx" | "clipper"
+	>("image");
 
 	// Image state
 	const [imagePrompt, setImagePrompt] = useState("");
@@ -238,31 +240,38 @@ export function AIStudioView() {
 			<Tabs
 				value={activeSubTab}
 				onValueChange={(val) =>
-					setActiveSubTab(val as "image" | "voice" | "sfx")
+					setActiveSubTab(val as "image" | "voice" | "sfx" | "clipper")
 				}
 				className="w-full"
 			>
-				<TabsList className="grid grid-cols-3 w-full bg-muted/60 p-1 rounded-lg">
+				<TabsList className="grid grid-cols-4 w-full bg-muted/60 p-1 rounded-lg">
 					<TabsTrigger
 						value="image"
 						className="flex items-center gap-1.5 text-xs py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-xs"
 					>
 						<HugeiconsIcon icon={Image02Icon} className="size-3.5" />
-						<span>Image / B-Roll</span>
+						<span>B-Roll</span>
 					</TabsTrigger>
 					<TabsTrigger
 						value="voice"
 						className="flex items-center gap-1.5 text-xs py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-xs"
 					>
 						<HugeiconsIcon icon={HeadphonesIcon} className="size-3.5" />
-						<span>Voiceover</span>
+						<span>Voice</span>
 					</TabsTrigger>
 					<TabsTrigger
 						value="sfx"
 						className="flex items-center gap-1.5 text-xs py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-xs"
 					>
 						<HugeiconsIcon icon={MusicNote03Icon} className="size-3.5" />
-						<span>Sound FX</span>
+						<span>SFX</span>
+					</TabsTrigger>
+					<TabsTrigger
+						value="clipper"
+						className="flex items-center gap-1.5 text-xs py-1.5 data-[state=active]:bg-background data-[state=active]:shadow-xs"
+					>
+						<HugeiconsIcon icon={Scissors01Icon} className="size-3.5" />
+						<span>Clipper</span>
 					</TabsTrigger>
 				</TabsList>
 
@@ -607,6 +616,11 @@ export function AIStudioView() {
 							</div>
 						</div>
 					)}
+				</TabsContent>
+
+				{/* 4. AI CLIPPER */}
+				<TabsContent value="clipper" className="mt-3">
+					<AIClipperContent />
 				</TabsContent>
 			</Tabs>
 		</PanelView>
