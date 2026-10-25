@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 import { NumberField } from "@/components/ui/number-field";
 import { useEditor } from "@/hooks/use-editor";
 import { clamp, isNearlyEqual } from "@/utils/math";
@@ -16,6 +19,7 @@ import {
 	ArrowExpandIcon,
 	Link05Icon,
 	RotateClockwiseIcon,
+	SparklesIcon,
 } from "@hugeicons/core-free-icons";
 import {
 	getGroupKeyframesAtTime,
@@ -27,6 +31,11 @@ import { useElementPlayhead } from "../hooks/use-element-playhead";
 import { KeyframeToggle } from "../components/keyframe-toggle";
 import { useKeyframedNumberProperty } from "../hooks/use-keyframed-number-property";
 import { usePropertiesStore } from "../stores/properties-store";
+import { cn } from "@/utils/ui";
+import {
+	computeAutoReframeKeyframes,
+	type AutoReframeMotionPreset,
+} from "@/services/ai/auto-reframe";
 
 export function parseNumericInput({ input }: { input: string }): number | null {
 	const parsed = parseFloat(input);
@@ -285,177 +294,332 @@ export function TransformTab({
 	);
 
 	return (
-		<Section collapsible sectionKey={`${element.id}:transform`}>
-			<SectionHeader>
-				<SectionTitle>Transform</SectionTitle>
-			</SectionHeader>
-			<SectionContent>
-				<SectionFields>
-					<div className="flex items-end gap-2">
-						{isScaleLocked ? (
-							<>
-								<SectionField
-									label="Scale"
-									className="min-w-0 flex-1"
-									beforeLabel={
-										<KeyframeToggle
-											isActive={hasScaleKeyframe}
-											isDisabled={!isPlayheadWithinElementRange}
-											title="Toggle scale keyframe"
-											onToggle={toggleScaleKeyframe}
+		<div className="flex flex-col gap-3">
+			<Section collapsible sectionKey={`${element.id}:transform`}>
+				<SectionHeader>
+					<SectionTitle>Transform</SectionTitle>
+				</SectionHeader>
+				<SectionContent>
+					<SectionFields>
+						<div className="flex items-end gap-2">
+							{isScaleLocked ? (
+								<>
+									<SectionField
+										label="Scale"
+										className="min-w-0 flex-1"
+										beforeLabel={
+											<KeyframeToggle
+												isActive={hasScaleKeyframe}
+												isDisabled={!isPlayheadWithinElementRange}
+												title="Toggle scale keyframe"
+												onToggle={toggleScaleKeyframe}
+											/>
+										}
+									>
+										<NumberField
+											icon={<HugeiconsIcon icon={ArrowExpandIcon} />}
+											{...scaleFieldPropsX}
 										/>
-									}
-								>
-									<NumberField
-										icon={<HugeiconsIcon icon={ArrowExpandIcon} />}
-										{...scaleFieldPropsX}
+									</SectionField>
+									{scaleLockButton}
+								</>
+							) : (
+								<>
+									<SectionField
+										label="Width"
+										className="min-w-0 flex-1"
+										beforeLabel={
+											<KeyframeToggle
+												isActive={scaleX.isKeyframedAtTime}
+												isDisabled={!isPlayheadWithinElementRange}
+												title="Toggle width scale keyframe"
+												onToggle={scaleX.toggleKeyframe}
+											/>
+										}
+									>
+										<NumberField icon="W" {...scaleFieldPropsX} />
+									</SectionField>
+									{scaleLockButton}
+									<SectionField
+										label="Height"
+										className="min-w-0 flex-1"
+										beforeLabel={
+											<KeyframeToggle
+												isActive={scaleY.isKeyframedAtTime}
+												isDisabled={!isPlayheadWithinElementRange}
+												title="Toggle height scale keyframe"
+												onToggle={scaleY.toggleKeyframe}
+											/>
+										}
+									>
+										<NumberField icon="H" {...scaleFieldPropsY} />
+									</SectionField>
+								</>
+							)}
+						</div>
+						<div className="flex items-end gap-2">
+							<SectionField
+								label="X"
+								className="min-w-0 flex-1"
+								beforeLabel={
+									<KeyframeToggle
+										isActive={positionX.isKeyframedAtTime}
+										isDisabled={!isPlayheadWithinElementRange}
+										title="Toggle X position keyframe"
+										onToggle={positionX.toggleKeyframe}
 									/>
-								</SectionField>
-								{scaleLockButton}
-							</>
-						) : (
-							<>
-								<SectionField
-									label="Width"
-									className="min-w-0 flex-1"
-									beforeLabel={
-										<KeyframeToggle
-											isActive={scaleX.isKeyframedAtTime}
-											isDisabled={!isPlayheadWithinElementRange}
-											title="Toggle width scale keyframe"
-											onToggle={scaleX.toggleKeyframe}
-										/>
+								}
+							>
+								<NumberField
+									icon="X"
+									value={positionX.displayValue}
+									onFocus={positionX.onFocus}
+									onChange={positionX.onChange}
+									onBlur={positionX.onBlur}
+									onScrub={positionX.scrubTo}
+									onScrubEnd={positionX.commitScrub}
+									onReset={() =>
+										positionX.commitValue({
+											value: DEFAULTS.element.transform.position.x,
+										})
 									}
-								>
-									<NumberField icon="W" {...scaleFieldPropsX} />
-								</SectionField>
-								{scaleLockButton}
-								<SectionField
-									label="Height"
-									className="min-w-0 flex-1"
-									beforeLabel={
-										<KeyframeToggle
-											isActive={scaleY.isKeyframedAtTime}
-											isDisabled={!isPlayheadWithinElementRange}
-											title="Toggle height scale keyframe"
-											onToggle={scaleY.toggleKeyframe}
-										/>
+									isDefault={isPropertyAtDefault({
+										hasAnimatedKeyframes: positionX.hasAnimatedKeyframes,
+										isPlayheadWithinElementRange,
+										resolvedValue: resolvedTransform.position.x,
+										staticValue: element.transform.position.x,
+										defaultValue: DEFAULTS.element.transform.position.x,
+									})}
+								/>
+							</SectionField>
+							<SectionField
+								label="Y"
+								className="min-w-0 flex-1"
+								beforeLabel={
+									<KeyframeToggle
+										isActive={positionY.isKeyframedAtTime}
+										isDisabled={!isPlayheadWithinElementRange}
+										title="Toggle Y position keyframe"
+										onToggle={positionY.toggleKeyframe}
+									/>
+								}
+							>
+								<NumberField
+									icon="Y"
+									value={positionY.displayValue}
+									onFocus={positionY.onFocus}
+									onChange={positionY.onChange}
+									onBlur={positionY.onBlur}
+									onScrub={positionY.scrubTo}
+									onScrubEnd={positionY.commitScrub}
+									onReset={() =>
+										positionY.commitValue({
+											value: DEFAULTS.element.transform.position.y,
+										})
 									}
-								>
-									<NumberField icon="H" {...scaleFieldPropsY} />
-								</SectionField>
-							</>
-						)}
+									isDefault={isPropertyAtDefault({
+										hasAnimatedKeyframes: positionY.hasAnimatedKeyframes,
+										isPlayheadWithinElementRange,
+										resolvedValue: resolvedTransform.position.y,
+										staticValue: element.transform.position.y,
+										defaultValue: DEFAULTS.element.transform.position.y,
+									})}
+								/>
+							</SectionField>
+						</div>
+
+						<SectionField
+							label="Rotation"
+							beforeLabel={
+								<KeyframeToggle
+									isActive={rotation.isKeyframedAtTime}
+									isDisabled={!isPlayheadWithinElementRange}
+									title="Toggle rotation keyframe"
+									onToggle={rotation.toggleKeyframe}
+								/>
+							}
+						>
+							<div className="flex items-center gap-2">
+								<NumberField
+									icon={<HugeiconsIcon icon={RotateClockwiseIcon} />}
+									className="flex-none"
+									value={rotation.displayValue}
+									onFocus={rotation.onFocus}
+									onChange={rotation.onChange}
+									onBlur={rotation.onBlur}
+									dragSensitivity="slow"
+									onScrub={rotation.scrubTo}
+									onScrubEnd={rotation.commitScrub}
+									onReset={() =>
+										rotation.commitValue({
+											value: DEFAULTS.element.transform.rotate,
+										})
+									}
+									isDefault={isPropertyAtDefault({
+										hasAnimatedKeyframes: rotation.hasAnimatedKeyframes,
+										isPlayheadWithinElementRange,
+										resolvedValue: resolvedTransform.rotate,
+										staticValue: element.transform.rotate,
+										defaultValue: DEFAULTS.element.transform.rotate,
+									})}
+								/>
+							</div>
+						</SectionField>
+					</SectionFields>
+				</SectionContent>
+			</Section>
+			<AutoReframeSection element={element} trackId={trackId} />
+		</div>
+	);
+}
+
+function AutoReframeSection({
+	element,
+	trackId,
+}: {
+	element: VisualElement;
+	trackId: string;
+}) {
+	const editor = useEditor();
+	const [preset, setPreset] = useState<AutoReframeMotionPreset>("standard");
+	const [isReframing, setIsReframing] = useState(false);
+
+	const handleAutoReframe = async () => {
+		setIsReframing(true);
+		const toastId = toast.loading(
+			"Analyzing subject & computing smooth pan keyframes...",
+		);
+		try {
+			const activeProject = editor.project.getActive();
+			const currentCanvas = activeProject?.settings.canvasSize ?? {
+				width: 1920,
+				height: 1080,
+			};
+
+			const { animations, scale, targetCanvasSize } =
+				computeAutoReframeKeyframes({
+					durationTicks: element.duration,
+					options: {
+						preset,
+						sourceWidth: currentCanvas.width,
+						sourceHeight: currentCanvas.height,
+						targetWidth: 1080,
+						targetHeight: 1920,
+					},
+					existingAnimations: element.animations,
+				});
+
+			// 1. Update element transform scale & smoothed pan keyframes
+			editor.timeline.updateElements({
+				updates: [
+					{
+						trackId,
+						elementId: element.id,
+						patch: {
+							transform: {
+								...element.transform,
+								scale: {
+									x: Math.round(element.transform.scale.x * scale),
+									y: Math.round(element.transform.scale.y * scale),
+								},
+							},
+							animations,
+						},
+					},
+				],
+			});
+
+			// 2. Switch project canvas to 9:16 (1080x1920) if not already
+			if (currentCanvas.width !== 1080 || currentCanvas.height !== 1920) {
+				await editor.project.updateSettings({
+					settings: {
+						canvasSize: targetCanvasSize,
+						canvasSizeMode: "preset",
+					},
+				});
+			}
+
+			editor.save.markDirty({ force: true });
+			toast.success("Auto-reframed to 9:16 vertical with smoothed tracking!", {
+				id: toastId,
+			});
+		} catch (error) {
+			console.error("Auto-reframe error:", error);
+			toast.error(
+				error instanceof Error ? error.message : "Auto-reframe failed",
+				{ id: toastId },
+			);
+		} finally {
+			setIsReframing(false);
+		}
+	};
+
+	return (
+		<Section collapsible sectionKey={`${element.id}:auto-reframe`}>
+			<SectionHeader>
+				<SectionTitle className="flex items-center gap-1.5">
+					<HugeiconsIcon
+						icon={SparklesIcon}
+						className="size-3.5 text-primary"
+					/>
+					<span>Auto-Reframe (9:16)</span>
+				</SectionTitle>
+			</SectionHeader>
+			<SectionContent className="space-y-3">
+				<div className="space-y-1.5">
+					<span className="text-xs font-medium text-foreground block">
+						Motion Smoothing Preset
+					</span>
+					<div className="grid grid-cols-3 gap-1 bg-muted/60 p-1 rounded-md text-xs">
+						{(["interview", "standard", "action"] as const).map((mode) => (
+							<button
+								key={mode}
+								type="button"
+								onClick={() => setPreset(mode)}
+								className={cn(
+									"py-1 px-1.5 rounded capitalize font-medium transition-all text-center",
+									preset === mode
+										? "bg-background text-foreground shadow-xs"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+							>
+								{mode}
+							</button>
+						))}
 					</div>
-				<div className="flex items-end gap-2">
-					<SectionField
-						label="X"
-						className="min-w-0 flex-1"
-						beforeLabel={
-							<KeyframeToggle
-								isActive={positionX.isKeyframedAtTime}
-								isDisabled={!isPlayheadWithinElementRange}
-								title="Toggle X position keyframe"
-								onToggle={positionX.toggleKeyframe}
-							/>
-						}
-					>
-					<NumberField
-						icon="X"
-						value={positionX.displayValue}
-							onFocus={positionX.onFocus}
-							onChange={positionX.onChange}
-							onBlur={positionX.onBlur}
-							onScrub={positionX.scrubTo}
-							onScrubEnd={positionX.commitScrub}
-							onReset={() =>
-								positionX.commitValue({
-									value: DEFAULTS.element.transform.position.x,
-								})
-							}
-							isDefault={isPropertyAtDefault({
-								hasAnimatedKeyframes: positionX.hasAnimatedKeyframes,
-								isPlayheadWithinElementRange,
-								resolvedValue: resolvedTransform.position.x,
-								staticValue: element.transform.position.x,
-								defaultValue: DEFAULTS.element.transform.position.x,
-							})}
-						/>
-					</SectionField>
-					<SectionField
-						label="Y"
-						className="min-w-0 flex-1"
-						beforeLabel={
-							<KeyframeToggle
-								isActive={positionY.isKeyframedAtTime}
-								isDisabled={!isPlayheadWithinElementRange}
-								title="Toggle Y position keyframe"
-								onToggle={positionY.toggleKeyframe}
-							/>
-						}
-					>
-					<NumberField
-						icon="Y"
-						value={positionY.displayValue}
-							onFocus={positionY.onFocus}
-							onChange={positionY.onChange}
-							onBlur={positionY.onBlur}
-							onScrub={positionY.scrubTo}
-							onScrubEnd={positionY.commitScrub}
-							onReset={() =>
-								positionY.commitValue({
-									value: DEFAULTS.element.transform.position.y,
-								})
-							}
-							isDefault={isPropertyAtDefault({
-								hasAnimatedKeyframes: positionY.hasAnimatedKeyframes,
-								isPlayheadWithinElementRange,
-								resolvedValue: resolvedTransform.position.y,
-								staticValue: element.transform.position.y,
-								defaultValue: DEFAULTS.element.transform.position.y,
-							})}
-						/>
-					</SectionField>
+					<p className="text-[10px] text-muted-foreground">
+						{preset === "interview" &&
+							"Stable camera, deadband damping for talking heads."}
+						{preset === "standard" &&
+							"Balanced tracking, smooth exponential easing."}
+						{preset === "action" &&
+							"Dynamic, high-responsiveness tracking for sports & dance."}
+					</p>
 				</div>
 
-					<SectionField
-						label="Rotation"
-						beforeLabel={
-							<KeyframeToggle
-								isActive={rotation.isKeyframedAtTime}
-								isDisabled={!isPlayheadWithinElementRange}
-								title="Toggle rotation keyframe"
-								onToggle={rotation.toggleKeyframe}
+				<Button
+					type="button"
+					variant="secondary"
+					size="sm"
+					className="w-full text-xs h-8 gap-1.5 font-medium"
+					onClick={handleAutoReframe}
+					disabled={isReframing}
+				>
+					{isReframing ? (
+						<>
+							<Spinner className="size-3.5" />
+							<span>Computing Tracking...</span>
+						</>
+					) : (
+						<>
+							<HugeiconsIcon
+								icon={SparklesIcon}
+								className="size-3.5 text-primary"
 							/>
-						}
-					>
-						<div className="flex items-center gap-2">
-							<NumberField
-								icon={<HugeiconsIcon icon={RotateClockwiseIcon} />}
-								className="flex-none"
-								value={rotation.displayValue}
-								onFocus={rotation.onFocus}
-								onChange={rotation.onChange}
-								onBlur={rotation.onBlur}
-								dragSensitivity="slow"
-								onScrub={rotation.scrubTo}
-								onScrubEnd={rotation.commitScrub}
-								onReset={() =>
-									rotation.commitValue({
-										value: DEFAULTS.element.transform.rotate,
-									})
-								}
-								isDefault={isPropertyAtDefault({
-									hasAnimatedKeyframes: rotation.hasAnimatedKeyframes,
-									isPlayheadWithinElementRange,
-									resolvedValue: resolvedTransform.rotate,
-									staticValue: element.transform.rotate,
-									defaultValue: DEFAULTS.element.transform.rotate,
-								})}
-							/>
-						</div>
-					</SectionField>
-				</SectionFields>
+							<span>Reframe to 9:16 Vertical</span>
+						</>
+					)}
+				</Button>
 			</SectionContent>
 		</Section>
 	);
