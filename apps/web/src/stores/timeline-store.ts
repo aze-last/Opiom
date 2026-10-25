@@ -11,6 +11,9 @@ interface TimelineStore {
 	toggleSnapping: () => void;
 	rippleEditingEnabled: boolean;
 	toggleRippleEditing: () => void;
+	silenceRemoverOpen: boolean;
+	setSilenceRemoverOpen: (open: boolean) => void;
+	toggleSilenceRemover: () => void;
 	expandedElementIds: Set<string>;
 	toggleElementExpanded: (elementId: string) => void;
 }
@@ -29,6 +32,18 @@ export const useTimelineStore = create<TimelineStore>()(
 			toggleRippleEditing: () => {
 				set((state) => ({
 					rippleEditingEnabled: !state.rippleEditingEnabled,
+				}));
+			},
+
+			silenceRemoverOpen: false,
+
+			setSilenceRemoverOpen: (open) => {
+				set({ silenceRemoverOpen: open });
+			},
+
+			toggleSilenceRemover: () => {
+				set((state) => ({
+					silenceRemoverOpen: !state.silenceRemoverOpen,
 				}));
 			},
 

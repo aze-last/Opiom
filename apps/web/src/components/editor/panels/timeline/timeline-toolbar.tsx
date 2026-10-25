@@ -43,12 +43,14 @@ import {
 	Layers01Icon,
 	Chart03Icon,
 	Unlink02Icon,
+	VolumeMute02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { OcRippleIcon } from "@/components/icons";
 import { GraphEditorPopover } from "./graph-editor/popover";
 import { PopoverTrigger } from "@/components/ui/popover";
 import { useGraphEditorController } from "./graph-editor/use-controller";
+import { SilenceRemoverDialog } from "./silence-remover-dialog";
 
 export function TimelineToolbar({
 	zoomLevel,
@@ -81,6 +83,7 @@ export function TimelineToolbar({
 					onZoom={handleZoom}
 				/>
 			</div>
+			<SilenceRemoverDialog />
 		</ScrollArea>
 	);
 }
@@ -159,6 +162,14 @@ function ToolbarLeftSection() {
 					tooltip="Split right"
 					onClick={({ event }) =>
 						handleAction({ action: "split-right", event })
+					}
+				/>
+
+				<ToolbarButton
+					icon={<HugeiconsIcon icon={VolumeMute02Icon} />}
+					tooltip="Smart Cut (Remove Silences) (Alt+S)"
+					onClick={({ event }) =>
+						handleAction({ action: "remove-silence", event })
 					}
 				/>
 

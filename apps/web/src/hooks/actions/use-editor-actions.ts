@@ -24,6 +24,7 @@ export function useEditorActions() {
 	const toggleSnapping = useTimelineStore((s) => s.toggleSnapping);
 	const rippleEditingEnabled = useTimelineStore((s) => s.rippleEditingEnabled);
 	const toggleRippleEditing = useTimelineStore((s) => s.toggleRippleEditing);
+	const toggleSilenceRemover = useTimelineStore((s) => s.toggleSilenceRemover);
 	const hasTimelineSelectionRef = useRef(false);
 	const clearTimelineSelectionRef = useRef(() => {});
 	const timelineScopeRef = useRef<ScopeEntry | null>(null);
@@ -250,6 +251,14 @@ export function useEditorActions() {
 				splitTime: currentTime,
 				retainSide: "left",
 			});
+		},
+		undefined,
+	);
+
+	useActionHandler(
+		"remove-silence",
+		() => {
+			toggleSilenceRemover();
 		},
 		undefined,
 	);

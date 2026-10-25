@@ -81,6 +81,11 @@ export const ACTIONS = {
 		description: "Split and remove right",
 		category: "editing",
 	},
+	"remove-silence": {
+		description: "Detect and remove silence",
+		category: "editing",
+		defaultShortcuts: ["alt+s"],
+	},
 	"delete-selected": {
 		description: "Delete selected elements",
 		category: "editing",
